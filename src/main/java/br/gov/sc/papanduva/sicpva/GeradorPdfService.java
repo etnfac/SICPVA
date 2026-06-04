@@ -221,15 +221,19 @@ public class GeradorPdfService {
             }
         }
 
+        // MOTOR DE REGRAS ATUALIZADO (Decreto 3401/24)
         if (dados.amparoLegalEtp != null && (dados.amparoLegalEtp.equals("A") || dados.amparoLegalEtp.equals("B"))) {
-            if (valorTotalGeral > 59909.45) {
-                throw new Exception("O valor total da compra (R$ " + String.format(new Locale("pt", "BR"), "%,.2f", valorTotalGeral) + ") ultrapassa o limite permitido para Dispensa. Revise os valores ou altere o Amparo Legal!");
+            if (valorTotalGeral > 130984.20) {
+                throw new Exception("O valor total da compra (R$ " + String.format(new Locale("pt", "BR"), "%,.2f", valorTotalGeral) + ") ultrapassa o teto máximo absoluto para Dispensa (R$ 130.984,20). Revise os valores!");
+            }
+            if (valorTotalGeral > 65492.11 && !"OUTROS".equals(dados.categoriaItem)) {
+                throw new Exception("O valor total (R$ " + String.format(new Locale("pt", "BR"), "%,.2f", valorTotalGeral) + ") ultrapassa o teto de R$ 65.492,11 para compras e serviços comuns. (Teto maior apenas para engenharia/obras).");
             }
         }
 
         if ("B".equals(dados.amparoLegalEtp)) {
-            if (valorTotalGeral > 14977.36) { 
-                throw new Exception("Checklist Art. 187 Negado: O valor total (R$ " + String.format(new Locale("pt", "BR"), "%,.2f", valorTotalGeral) + ") ultrapassa 1/4 do limite da dispensa. Por favor, escolha a Dispensa Padrão (Opção A).");
+            if (valorTotalGeral > 16373.02) { 
+                throw new Exception("Checklist Art. 187 Negado: O valor total (R$ " + String.format(new Locale("pt", "BR"), "%,.2f", valorTotalGeral) + ") ultrapassa 1/4 do limite da dispensa (R$ 16.373,02). Por favor, escolha a Dispensa Padrão (Opção A).");
             }
             if (dados.prazoEntregaDias != null && dados.prazoEntregaDias > 30) {
                 throw new Exception("Checklist Art. 187 Negado: A entrega deve ocorrer em até 30 dias (" + dados.prazoEntregaDias + " dias informados). Altere o prazo ou a modalidade.");
@@ -351,7 +355,6 @@ public class GeradorPdfService {
             doc.add(pReqs);
         }
 
-        // TÓPICO 5: CLASSIFICAÇÃO DO BEM
         if (dados.categoriaItem != null) {
             doc.add(new Paragraph("5 - CLASSIFICAÇÃO DO ITEM (Art. 47, § 1º)", fB));
             String catTexto = "";
@@ -365,7 +368,6 @@ public class GeradorPdfService {
             Paragraph pCat = new Paragraph(catTexto, fN); pCat.setSpacingAfter(12f); doc.add(pCat);
         }
 
-        // TÓPICO 6: PREFERÊNCIA ME/EPP
         if (dados.preferenciaMeEpp != null) {
             doc.add(new Paragraph("6 - PREFERÊNCIA ME/EPP LOCAL (Art. 190 Decreto 3401/2024 c/c Art. 49 LC 123/2006)", fB));
             String meTexto = "";
@@ -475,7 +477,16 @@ public class GeradorPdfService {
         String[] fallback = {setor, objeto, baseJust, "NAO", rawItems, "OK"};
         if (GEMINI_API_KEY == null || GEMINI_API_KEY.isEmpty()) return fallback;
         try {
-            String prompt = "Revisor de licitações. 1: Corrija ortografia de: '" + setor + "'. 2: Corrija ortografia de: '" + objeto + "'. 3: Una este problema ('" + problema + "') e benefício ('" + beneficio + "') num parágrafo formal jurídico." + (isReg ? " Inclua que é regularização de despesa." : "") + " 4: Responda apenas SIM ou NAO: O objeto '" + objeto + "' envolve tecnologia, computadores, internet, software, impressoras ou celulares? 5: Atue como corretor ortográfico. Abaixo há uma lista de produtos, marcas e fornecedores separados pelo delimitador '|@|'. Corrija a ortografia e aplique Title Case (ex: 'samsumg' vira 'Samsung', 'iphnoe' ou 'igphone' vira 'iPhone'). NÃO altere a ordem, NÃO adicione itens e MANTENHA o delimitador '|@|' exato entre eles: [" + rawItems + "]. 6: Atue como auditor do Tribunal de Contas. Avalie se o amparo legal escolhido ('" + amparoTexto + "') faz sentido para o objeto ('" + objeto + "'). Atenção: Celulares, computadores, veículos e material de expediente SÃO BENS COMUNS e NÃO PODEM usar Inexigibilidade (Art. 74). Se o amparo for uma Inexigibilidade para um item comum ou absurdo, retorne EXATAMENTE começando com a palavra 'ERRO: ' seguido de uma explicação do porquê ser ilegal e sugerindo a Dispensa de Licitação. Se o amparo estiver coerente com o objeto, retorne APENAS a palavra 'OK'. RETORNE EXATAMENTE 6 TEXTOS SEPARADOS POR '###'.";
+            String prompt = "Você é um auditor rigoroso de licitações da Prefeitura de Papanduva, aplicando a Lei 14.133/21 e o Decreto Municipal 3.401/24. " +
+            "1: Corrija ortografia de: '" + setor + "'. " +
+            "2: Corrija ortografia de: '" + objeto + "'. " +
+            "3: Una este problema ('" + problema + "') e benefício ('" + beneficio + "') num parágrafo formal jurídico." + (isReg ? " Inclua que é regularização de despesa." : "") + " " +
+            "4: Responda apenas SIM ou NAO: O objeto '" + objeto + "' envolve tecnologia/T.I.? " +
+            "5: Regra do Manual de Compras: 'NUNCA inclua quantidades, prazos ou nomes de secretarias na descrição do produto'. Abaixo há uma lista delimitada por '|@|'. Corrija a ortografia, aplique Title Case e APAGUE qualquer menção a quantidades (ex: '500 unidades'), prazos ou secretarias de dentro dos nomes dos produtos. MANTENHA o delimitador exato: [" + rawItems + "]. " +
+            "6: Avalie se o amparo legal ('" + amparoTexto + "') faz sentido para o objeto ('" + objeto + "'). " +
+            "Regra: Inexigibilidade (Art. 74) é SÓ para fornecedor exclusivo, artista consagrado ou notória especialização. Celulares, veículos, material de expediente, etc., SÃO BENS COMUNS (nunca inexigíveis). " +
+            "Se o amparo for ilegal, retorne EXATAMENTE começando com a palavra 'ERRO: ' seguido do motivo e sugerindo a Dispensa de Licitação. Se for coerente, retorne APENAS 'OK'. " +
+            "RETORNE EXATAMENTE 6 TEXTOS SEPARADOS POR '###'.";
             
             String promptSeguro = prompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
             String json = "{\"contents\":[{\"parts\":[{\"text\":\"" + promptSeguro + "\"}]}]}";
