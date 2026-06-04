@@ -221,7 +221,6 @@ public class GeradorPdfService {
             }
         }
 
-        // MOTOR DE REGRAS ATUALIZADO (Decreto 3401/24)
         if (dados.amparoLegalEtp != null && (dados.amparoLegalEtp.equals("A") || dados.amparoLegalEtp.equals("B"))) {
             if (valorTotalGeral > 130984.20) {
                 throw new Exception("O valor total da compra (R$ " + String.format(new Locale("pt", "BR"), "%,.2f", valorTotalGeral) + ") ultrapassa o teto máximo absoluto para Dispensa (R$ 130.984,20). Revise os valores!");
@@ -519,3 +518,12 @@ public class GeradorPdfService {
             return fallback; 
         }
     }
+
+    private void registarLogNaCloud(String data, String setor, String objeto, double valor, String amparo, String chave, String docs) {
+        if (GOOGLE_SHEETS_URL == null || GOOGLE_SHEETS_URL.isEmpty()) return;
+        try {
+            String jsonPayload = String.format(new Locale("pt", "BR"), "{\"dataEmissao\": \"%s\", \"setor\": \"%s\", \"objeto\": \"%s\", \"valor\": \"R$ %,.2f\", \"amparo\": \"%s\", \"chave\": \"%s\", \"documentos\": \"%s\"}", data, setor.replace("\"", "\\\""), objeto.replace("\"", "\\\""), valor, amparo.replace("\"", "\\\""), chave, docs);
+            HttpClient.newHttpClient().send(HttpRequest.newBuilder().uri(URI.create(GOOGLE_SHEETS_URL)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8)).build(), HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {}
+    }
+}
