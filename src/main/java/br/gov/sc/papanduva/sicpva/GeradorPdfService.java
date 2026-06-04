@@ -221,6 +221,7 @@ public class GeradorPdfService {
             }
         }
 
+        // MOTOR DE REGRAS ATUALIZADO (Decreto 3401/24)
         if (dados.amparoLegalEtp != null && (dados.amparoLegalEtp.equals("A") || dados.amparoLegalEtp.equals("B"))) {
             if (valorTotalGeral > 130984.20) {
                 throw new Exception("O valor total da compra (R$ " + String.format(new Locale("pt", "BR"), "%,.2f", valorTotalGeral) + ") ultrapassa o teto máximo absoluto para Dispensa (R$ 130.984,20). Revise os valores!");
@@ -442,6 +443,8 @@ public class GeradorPdfService {
         PdfWriter.getInstance(doc, new FileOutputStream("4_CERTIDAO_" + hash + ".pdf")).setPageEvent(new RodapeEvento(hash, "CERTIDÃO"));
         doc.open();
         
+        adicionarCabecalho(doc);
+
         Font fB = getFonte(true, 12);
         Font fN = getFonte(false, 12);
 
@@ -479,42 +482,49 @@ public class GeradorPdfService {
         if (apiKey == null || apiKey.trim().isEmpty()) return fallback;
         
         try {
-            String prompt = "Você é um auditor rigoroso de licitações da Prefeitura de Papanduva, aplicando a Lei 14.133/21 e o Decreto Municipal 3.401/24. " +
+            String prompt = "Você é um auditor e revisor rigoroso de licitações. " +
             "1: Corrija ortografia de: '" + setor + "'. " +
             "2: Corrija ortografia de: '" + objeto + "'. " +
-            "3: Una o problema ('" + problema + "') e o benefício ('" + beneficio + "') transformando-os em um único parágrafo formal, impessoal e com linguagem jurídica adequada para um Termo de Referência." + (isReg ? " Inclua que é regularização de despesa." : "") + " " +
+            "3: Transforme o seguinte problema e benefício num único parágrafo muito formal, impessoal e com linguagem jurídica de administração pública para um Termo de Referência: Problema: '" + problema + "' / Benefício: '" + beneficio + "'." + (isReg ? " Inclua que é regularização de despesa." : "") + " " +
             "4: Responda apenas SIM ou NAO: O objeto '" + objeto + "' envolve tecnologia/T.I.? " +
-            "5: Regra do Manual: 'NUNCA inclua quantidades, prazos ou nomes de secretarias na descrição do produto'. Abaixo há uma lista delimitada por '|@|'. Corrija a ortografia, aplique Title Case e APAGUE quantidades/prazos/secretarias de dentro dos nomes. MANTENHA o delimitador exato: [" + rawItems + "]. " +
-            "6: Avalie se o amparo legal ('" + amparoTexto + "') faz sentido para o objeto ('" + objeto + "'). " +
-            "Se for ilegal, retorne EXATAMENTE começando com 'ERRO: ' seguido do motivo. Se for coerente, retorne APENAS 'OK'. " +
-            "RETORNE EXATAMENTE 6 TEXTOS SEPARADOS POR '###'.";
+            "5: Corrija ortografia, aplique Title Case e APAGUE quantidades/prazos/secretarias de dentro dos nomes dos produtos. MANTENHA o delimitador '|@|' exato entre eles: [" + rawItems + "]. " +
+            "6: Avalie se o amparo legal ('" + amparoTexto + "') faz sentido para o objeto ('" + objeto + "'). Inexigibilidade é só para exclusividade/notória especialização. Bens comuns não podem. Se for ilegal, retorne EXATAMENTE começando com 'ERRO: ' e o motivo. Se for coerente, retorne 'OK'. " +
+            "REGRAS DE SAÍDA OBRIGATÓRIAS: RETORNE APENAS OS 6 TEXTOS SEPARADOS POR '###'. NÃO USE MARKDOWN (COMO ```). NÃO USE QUEBRAS DE LINHA DENTRO DOS TEXTOS. NÃO ADICIONE NÚMEROS NO INÍCIO.";
             
-            String json = "{\"contents\":[{\"parts\":[{\"text\":\"" + prompt.replace("\"", "\\\"").replace("\n", " ") + "\"}]}]}";
+            // Tratamento de limpeza profunda para que nenhum caractere digitado pelo utilizador quebre o JSON
+            String promptSeguro = prompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", "");
+            String json = "{\"contents\":[{\"parts\":[{\"text\":\"" + promptSeguro + "\"}]}]}";
             
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey))
+                .uri(URI.create("[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=)" + apiKey))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
                 .build();
                 
             HttpResponse<String> r = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
             
+            if (r.statusCode() != 200) {
+                return fallback;
+            }
+
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(r.body());
             
             if (root.has("candidates")) {
                 String proc = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+                
+                proc = proc.replace("```json", "").replace("```text", "").replace("```html", "").replace("```", "").trim();
+                
                 String[] pts = proc.split("###");
                 if (pts.length >= 6) { 
                     for(int i=0; i<6; i++) {
-                        pts[i] = pts[i].trim().replaceFirst("^[1-6][\\.\\-\\\\) :]\\s*", ""); 
+                        pts[i] = pts[i].trim().replaceFirst("^[1-6][\\.\\-\\\\) :]\\s*", "").replace("\n", " ").trim(); 
                     }
                     return pts; 
                 }
             }
             return fallback;
         } catch (Exception e) { 
-            e.printStackTrace();
             return fallback; 
         }
     }
