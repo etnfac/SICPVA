@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SICPVA - Papanduva</title>
+    <link rel="icon" href="icone.ico.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="header-container">
+        <div class="logo-box">
+            <img src="logo.png" alt="Logo Prefeitura de Papanduva">
+        </div>
+        <div class="title-box">
+            <p class="etiqueta">SICPVA - SISTEMA INTEGRADO DE COMPRAS DE PAPANDUVA</p>
+            <h1>DFD E TR SIMPLIFICADO <br><span class="linha">+ ORÇAMENTOS PLANILHADOS</span><br><span>EM 5 MINUTOS!</span></h1>
+            <p class="subtitulo">Preencha os dados abaixo. Todos os campos são de preenchimento obrigatório.</p>
+        </div>
+    </header>
+
+    <div class="caixa-resultado">
+        
+        <div class="bloco-menu">
+            <a href="#sec-admin" class="menu-etapa active">1. Dados Administrativos</a>
+            <a href="#sec-objeto" class="menu-etapa">2. Objeto e Necessidade</a>
+            <a href="#sec-itens" class="menu-etapa">3. Itens e Orçamentos</a>
+            
+            <div class="verificador-menu">
+                <span>Auditoria de Processo</span>
+                <input type="text" id="inputChave" placeholder="Chave (Ex: 8A7B6C5D)...">
+                <button type="button" onclick="verificarProcessos()">Verificar Autenticidade</button>
+                
+                <hr style="border-color: #27272a; margin: 15px 0;">
+                
+                <a href="https://docs.google.com/spreadsheets/d/1wRiZPdGBYnzXipPmXxHn0TKHNFbshw-P2tfipuGHzJM/edit?pli=1&gid=0#gid=0" target="_blank" class="menu-etapa" style="color: #3b82f6; text-align: center; padding: 10px; margin-bottom: 0;">📋 Abrir Planilha Google</a>
+            </div>
+        </div>
+
+        <div class="bloco-form" id="form-container">
+            <form id="formSICPVA">
+                
+                <div id="sec-admin" class="sessao-titulo">1. Dados Administrativos</div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Secretaria</label>
+                        <select id="setor" required>
+                            <option value="" disabled selected>Selecione a Secretaria...</option>
+                            <option value="Administração">Administração</option>
+                            <option value="Cultura, Turismo, Esporte e Juventude">Cultura, Turismo, Esporte e Juventude</option>
+                            <option value="Agricultura">Agricultura</option>
+                            <option value="Assistência Social">Assistência Social</option>
+                            <option value="Educação">Educação</option>
+                            <option value="Saúde">Saúde</option>
+                            <option value="Desenvolvimento Econômico">Desenvolvimento Econômico</option>
+                            <option value="Planejamento, Urbanismo e Mobilidade">Planejamento, Urbanismo e Mobilidade</option>
+                            <option value="Detran">Detran</option>
+                            <option value="Gabinete">Gabinete</option>
+                        </select>
+                    </div>
+                    <div class="form-col"><label>E-mail Institucional</label><input type="email" id="emailResp" placeholder="Ex: email@papanduva.sc.gov.br" pattern="^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-col"><label>Nome do Solicitante</label><input type="text" id="nomeResp" placeholder="Seu nome completo" required></div>
+                    <div class="form-col"><label>Sua Matrícula</label><input type="number" id="matResp" placeholder="Ex: 0001" min="1" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Nome do Secretário(a)</label>
+                        <select id="nomeSec" required onchange="atualizarCargoSec()">
+                            <option value="" disabled selected>Selecione o(a) Gestor(a)...</option>
+                            <option value="Fábio Pereira dos Santos">Fábio Pereira dos Santos</option>
+                            <option value="Luzia Romanovski">Luzia Romanovski</option>
+                            <option value="Lucas Fernandes Dos Santos Borges">Lucas Fernandes Dos Santos Borges</option>
+                            <option value="Emerson Luis Selenka Szymczak">Emerson Luis Selenka Szymczak</option>
+                            <option value="Gabriel Kichileski">Gabriel Kichileski</option>
+                            <option value="Mari Stela Bertho Da Silva Inácio">Mari Stela Bertho Da Silva Inácio</option>
+                            <option value="Neusa Jancoski">Neusa Jancoski</option>
+                            <option value="Fabio José Padilha">Fabio José Padilha</option>
+                            <option value="Aldoni Vieira Junior">Aldoni Vieira Junior</option>
+                            <option value="Paulo Cesar Oracz">Paulo Cesar Oracz</option>
+                            <option value="Gilvano Beiger">Gilvano Beiger</option>
+                            <option value="Maria Jusselia Ratuchinski">Maria Jusselia Ratuchinski</option>
+                            <option value="Carliza Simoes De Oliveira">Carliza Simoes De Oliveira</option>
+                            <option value="Salete De Mello Cesar">Salete De Mello Cesar</option>
+                        </select>
+                    </div>
+                    <div class="form-col">
+                        <label>Cargo do Secretário(a)</label>
+                        <input type="text" id="cargoSec" placeholder="Preenchido automaticamente" required readonly style="background-color: #27272a; color: #a1a1aa; cursor: not-allowed;">
+                    </div>
+                </div>
+
+                <div id="sec-objeto" class="sessao-titulo">2. Objeto e Justificativa</div>
+                <div class="form-group">
+                    <label>Objeto Geral</label>
+                    <span class="exemplo">Ex: Aquisição de material de expediente | Contratação de empresa para reforma.</span>
+                    <input type="text" id="objeto" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Problema Atual (A Dor)</label>
+                        <textarea id="problema" rows="2" required></textarea>
+                    </div>
+                    <div class="form-col">
+                        <label>Benefício (A Solução)</label>
+                        <textarea id="beneficio" rows="2" required></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col" style="flex: 2;">
+                        <label>Categoria do Item Específico</label>
+                        <select id="categoriaItem" required>
+                            <option value="" disabled selected>Selecione o enquadramento do objeto...</option>
+                            <option value="CONSUMO">Consumo / Manutenção (Café, Água, Limpeza, Papel, etc.)</option>
+                            <option value="SAUDE">Saúde / Judicial (Medicamentos, Fórmulas, Testes, etc.)</option>
+                            <option value="TECNOLOGIA">Tecnologia e TI (Computadores, Impressoras, Rede, etc.)</option>
+                            <option value="MOBILIARIO">Mobiliário e Equipamentos (Móveis, Eletrodomésticos, etc.)</option>
+                            <option value="OUTROS">Outros (Requer justificativa anexa)</option>
+                        </select>
+                    </div>
+                    <div class="form-col" style="flex: 1;">
+                        <label>Natureza da Demanda</label>
+                        <select id="natureza" required>
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="FUTURA">Compra Padrão (Futuro)</option>
+                            <option value="REGULARIZACAO">Regularização (Já Executado)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Prazo de Entrega (Dias Úteis)</label>
+                        <input type="number" id="prazo" min="0" placeholder="Ex: 30" required>
+                    </div>
+                    <div class="form-col">
+                        <label>Término do Contrato (Meses)</label>
+                        <input type="number" id="termino" min="1" placeholder="Ex: 12" required>
+                    </div>
+                    <div class="form-col">
+                        <label>Grau de Prioridade</label>
+                        <select id="prioridade" required>
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="BAIXA">Baixa (Reposição de estoque)</option>
+                            <option value="MÉDIA" selected>Média (Fluxo normal do setor)</option>
+                            <option value="ALTA">Alta (Urgente / Risco de paralisação)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row" style="margin-top: 10px; margin-bottom: 20px; background: #111114; padding: 15px; border-radius: 8px; border: 1px solid #27272a; flex-direction: column;">
+                    <label style="color: #fafafa; margin-bottom: 10px; font-size: 14px;">Requisitos Especiais da Contratação (Termo de Referência)</label>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 5px;"><input type="checkbox" id="reqPadrao" style="width:18px; height:18px;"><label for="reqPadrao" style="margin:0; cursor:pointer;">Produto Novo (Padrão)</label></div>
+                        <div style="display: flex; align-items: center; gap: 5px;"><input type="checkbox" id="reqSust" style="width:18px; height:18px;"><label for="reqSust" style="margin:0; cursor:pointer;">Sustentabilidade</label></div>
+                        <div style="display: flex; align-items: center; gap: 5px;"><input type="checkbox" id="reqCert" style="width:18px; height:18px;"><label for="reqCert" style="margin:0; cursor:pointer;">Certificação INMETRO/ANVISA</label></div>
+                        <div style="display: flex; align-items: center; gap: 5px;"><label for="reqGarantia" style="margin:0;">Garantia (Meses):</label><input type="number" id="reqGarantia" min="0" placeholder="Ex: 12" style="width: 80px; padding: 6px;"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col" style="flex: 2;">
+                        <label>Amparo Legal / Dispensa do ETP</label>
+                        <select id="amparo" required onchange="atualizarTutorialAmparo()">
+                            <option value="" disabled selected>Selecione a justificativa...</option>
+                            <option value="A">a) Dispensa Padrão por Valor (Art. 75, I ou II)</option>
+                            <option value="B">b) Compra Imediata de Baixo Valor (Art. 187)</option>
+                            <option value="C">c) Inexigibilidade (Fornecedor Único - Art. 74)</option>
+                            <option value="D">d) Bens e Serviços Comuns</option>
+                        </select>
+                        <div id="tutorialAmparo" style="margin-top: 8px; padding: 12px; background-color: #1e1e24; border-left: 3px solid #3b82f6; font-size: 13px; color: #d4d4d8; display: none; line-height: 1.4; border-radius: 4px;"></div>
+                    </div>
+                    <div class="form-col" style="flex: 1;">
+                        <label>Local de Entrega</label>
+                        <input type="text" id="localEntrega" placeholder="Ex: Almoxarifado Central" required>
+                    </div>
+                </div>
+                
+                <div class="form-row" style="margin-top: 10px; margin-bottom: 20px; background: #111114; padding: 15px; border-radius: 8px; border: 1px solid #27272a;">
+                    <div class="form-col" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="cincatarina" style="width: 18px; height: 18px; cursor: pointer;">
+                        <label for="cincatarina" style="margin: 0; cursor: pointer;">Compra via Consórcio Vigente? (Ex: CINCATARINA)</label>
+                    </div>
+                </div>
+
+                <div id="sec-itens" class="sessao-titulo">3. Itens e Orçamentos</div>
+                
+                <div class="form-row" style="margin-top: 10px; margin-bottom: 20px; background: #18181b; padding: 20px; border-radius: 8px; border: 1px solid #7c3aed; flex-direction: column;">
+                    <label style="color: #fafafa; margin-bottom: 10px; font-size: 15px; font-weight: 700;">🤝 Preferência ME/EPP Local (Art. 190 Decreto 3401/2024)</label>
+                    <span class="dica">Atenção: Opção válida de acordo com a LC 123/2006.</span>
+                    <select id="preferenciaMeEpp" required onchange="atualizarMeEpp()" style="margin-top: 10px;">
+                        <option value="" disabled selected>O fornecedor selecionado é ME/EPP sediada em Papanduva/SC?</option>
+                        <option value="SIM">SIM — Preferência aplicada</option>
+                        <option value="NAO">NÃO — Justificativa necessária</option>
+                    </select>
+
+                    <div id="bloco-justificativa-meepp" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #3f3f46;">
+                        <label style="color: #ef4444;">Justificativa para NÃO aplicação da preferência:</label>
+                        <select id="justificativaMeEpp">
+                            <option value="" disabled selected>Selecione o enquadramento...</option>
+                            <option value="NAO_IDENTIFICADA">NÃO FORAM IDENTIFICADAS ME/EPP locais capazes de atender o objeto (Art. 49, II)</option>
+                            <option value="EXCEDE_10">ME/EPP IDENTIFICADA, porém o preço superior excede 10% (Não vantajosa) (Art. 49, III)</option>
+                            <option value="CONSORCIO">CONTRATAÇÃO VIA CONSÓRCIO/ATA VIGENTE (Ex: Cincatarina, Contrata Mais Brasil)</option>
+                            <option value="DENTRO_10">ME/EPP LOCAL COM PREÇO SUPERIOR, mas dentro do limite de 10%</option>
+                        </select>
+                    </div>
+                </div>
+
+                <span class="dica">Pelo menos 1 Item e 1 Fornecedor são obrigatórios.</span>
+                <div id="itens-container"></div>
+                <button type="button" class="btn-add" onclick="adicionarItem()">+ Adicionar Novo Item</button>
+
+                <div id="bloco-certidao" style="display: none; padding: 25px; background: #1e1e24; border-radius: 8px; border-left: 4px solid #22c55e; margin-top: 40px; margin-bottom: 20px;">
+                    <h4 style="color: #fafafa; margin-bottom: 5px; font-size: 18px;">📄 Emitir Certidão de Dispensa (Exclusivo Art. 187)</h4>
+                    <p style="font-size: 13px; color: #a1a1aa; margin-bottom: 20px;">O sistema detectou o Amparo 'B'. Preencha os dados abaixo para o 4º Documento.</p>
+                    <div class="form-row" style="margin-bottom:0;">
+                        <div class="form-col"><label>Nome na Assinatura</label><input type="text" id="certNome" placeholder="Ex: Ethan Faccioli"></div>
+                        <div class="form-col"><label>Cargo / Matrícula</label><input type="text" id="certCargo" placeholder="Ex: Chefe de Serviços / Mat: 5726"></div>
+                        <div class="form-col"><label>Data da Assinatura</label><input type="text" id="certData" placeholder="Ex: 04 de Junho de 2026"></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-gerar" style="margin-top: 40px;">ENVIAR</button>
+            </form>
+        </div>
+    </div>
+
+<div class="custom-alert-overlay" id="customAlertOverlay">
+    <div class="custom-alert-box">
+        <div class="custom-alert-title" id="customAlertTitle">Aviso</div>
+        <div class="custom-alert-msg" id="customAlertMsg">Mensagem aqui</div>
+        <button class="custom-alert-btn" onclick="closeCustomAlert()">Entendi!</button>
+    </div>
+</div>
+
+<div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <h3 style="font-weight: bold;">Processando...</h3>
+    <p style="color: #a1a1aa;">Seus arquivos estão sendo gerados.</p>
+</div>
+
+<script>
+    function showCustomAlert(title, msg, isError = false) {
+        document.getElementById('customAlertTitle').innerHTML = (isError ? '🛑 ' : '✅ ') + title;
+        document.getElementById('customAlertMsg').innerText = msg;
+        document.getElementById('customAlertOverlay').style.display = 'flex';
+    }
+    function closeCustomAlert() {
+        document.getElementById('customAlertOverlay').style.display = 'none';
+    }
+
+    function atualizarCargoSec() {
+        const cargos = {
+            "Fábio Pereira dos Santos": "Secretário de Administração",
+            "Luzia Romanovski": "Secretária Adjunta de Administração",
+            "Lucas Fernandes Dos Santos Borges": "Secretário de Cultura, Turismo, Esporte e Juventude",
+            "Emerson Luis Selenka Szymczak": "Secretário de Saúde",
+            "Gabriel Kichileski": "Secretário de Desenvolvimento Econômico",
+            "Mari Stela Bertho Da Silva Inácio": "Secretária de Assistência Social",
+            "Neusa Jancoski": "Secretária Adjunta da Assistência Social e Economia Solidária",
+            "Fabio José Padilha": "Secretário de Fazenda",
+            "Aldoni Vieira Junior": "Secretário de Planejamento, Urbanismo e Mobilidade",
+            "Paulo Cesar Oracz": "Secretário de Desenvolvimento Rural e Meio Ambiente",
+            "Gilvano Beiger": "Secretário de Infraestrutura",
+            "Maria Jusselia Ratuchinski": "Secretária de Educação",
+            "Carliza Simoes De Oliveira": "Secretária Adjunta de Educação",
+            "Salete De Mello Cesar": "Assessor Especial de Gabinete"
+        };
+        const nome = document.getElementById('nomeSec').value;
+        document.getElementById('cargoSec').value = cargos[nome] || "";
+    }
+
+    function atualizarMeEpp() {
+        const val = document.getElementById('preferenciaMeEpp').value;
+        const justBox = document.getElementById('bloco-justificativa-meepp');
+        const justSelect = document.getElementById('justificativaMeEpp');
+        if (val === 'NAO') {
+            justBox.style.display = 'block';
+            justSelect.required = true;
+        } else {
+            justBox.style.display = 'none';
+            justSelect.required = false;
+            justSelect.value = "";
+        }
+    }
+
+    function atualizarTutorialAmparo() {
+        const tutoriais = {
+            "A": "<strong style='color:#60a5fa;'>Quando usar:</strong> Compras ou serviços comuns até o limite de R$ 59.909,45. É a modalidade padrão para a grande maioria das compras do dia a dia da Prefeitura.",
+            "B": "<strong style='color:#60a5fa;'>Quando usar:</strong> Compras de entrega rápida (até 30 dias) e de valor muito baixo (até R$ 14.977,36). É o rito mais rápido e menos burocrático (Art. 187).",
+            "C": "<strong style='color:#60a5fa;'>Quando usar:</strong> APENAS quando existe um ÚNICO fornecedor ou marca possível no mundo (ex: show de um artista específico, peça exclusiva de fábrica). Exige carta de exclusividade.",
+            "D": "<strong style='color:#60a5fa;'>Quando usar:</strong> Bens e serviços comuns onde o valor não importa, mas a descrição do item já define perfeitamente o que é (ex: papel A4, canetas). A complexidade técnica é nula."
+        };
+        
+        const amparo = document.getElementById('amparo').value;
+        const divTutorial = document.getElementById('tutorialAmparo');
+        const prazoInput = document.getElementById('prazo');
+        const blocoCertidao = document.getElementById('bloco-certidao');
+        
+        if (amparo && tutoriais[amparo]) {
+            divTutorial.style.display = 'block';
+            divTutorial.innerHTML = tutoriais[amparo];
+        } else {
+            divTutorial.style.display = 'none';
+        }
+
+        if(amparo === 'B') {
+            prazoInput.value = 30;
+            prazoInput.readOnly = true;
+            prazoInput.style.backgroundColor = '#27272a';
+            prazoInput.style.color = '#a1a1aa';
+            prazoInput.style.cursor = 'not-allowed';
+            blocoCertidao.style.display = 'block';
+        } else {
+            prazoInput.readOnly = false;
+            prazoInput.style.backgroundColor = '#18181b';
+            prazoInput.style.color = '#fafafa';
+            prazoInput.style.cursor = 'text';
+            blocoCertidao.style.display = 'none';
+        }
+    }
+
+    let numItem = 0;
+    const opcoesUnidade = `<option value="" disabled selected>Unid.</option><option value="UND">UND (Unidade)</option><option value="CX">CX (Caixa)</option><option value="PCT">PCT (Pacote)</option><option value="L">L (Litro)</option><option value="KG">KG (Quilograma)</option><option value="SV">SV (Serviço)</option><option value="KM">KM (Quilômetro)</option><option value="M2">M²</option><option value="M3">M³</option><option value="FRASCO">Frasco</option>`;
+
+    function mascaraMoeda(event) {
+        let el = event.target; let v = el.value.replace(/\D/g, '');
+        if (v === "") { el.value = ""; return; }
+        v = (v / 100).toFixed(2) + ''; v = v.replace(".", ","); v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+        el.value = "R$ " + v;
+    }
+
+    function mascaraCNPJ(event) {
+        let el = event.target;
+        let v = el.value.replace(/\D/g, '');
+        if (v.length > 14) v = v.substring(0, 14);
+        v = v.replace(/^(\d{2})(\d)/, "$1.$2");
+        v = v.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        v = v.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        v = v.replace(/(\d{4})(\d)/, "$1-$2");
+        el.value = v;
+    }
+
+    function adicionarItem() {
+        numItem++; 
+        const div = document.createElement('div'); 
+        div.className = 'item-box';
+        const btnRemoverItem = numItem > 1 ? `<button type="button" class="btn-remover-item" onclick="removerItem(this)">🗑️ Remover Item</button>` : '';
+
+        div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4 style="color: #a855f7; font-size: 15px; margin: 0;">Item ${numItem}</h4>
+                ${btnRemoverItem}
+            </div>
+            <div class="form-row" style="margin-bottom: 0;">
+                <div class="form-col" style="flex: 2;"><input type="text" class="i-desc" placeholder="Descrição (Ex: Papel A4)" required></div>
+                <div class="form-col" style="flex: 0.5;"><input type="number" class="i-qtd" placeholder="Qtd" min="1" required></div>
+                <div class="form-col" style="flex: 1;"><select class="i-un" required>${opcoesUnidade}</select></div>
+                <div class="form-col" style="flex: 1;"><select class="i-crit" required><option value="false" selected>Média Saneada</option><option value="true">Menor Preço</option></select></div>
+            </div>
+            <div class="cotacoes-container"></div>
+            <button type="button" class="btn-add" onclick="addCotacao(this)">+ Inserir Cotação</button>
+        `;
+        document.getElementById('itens-container').appendChild(div);
+        addCotacao(div.querySelector('.btn-add'));
+    }
+
+    function removerItem(btn) { btn.closest('.item-box').remove(); }
+
+    function addCotacao(btn) {
+        const container = btn.previousElementSibling; 
+        const div = document.createElement('div'); 
+        div.className = 'cotacao-box form-row';
+        const isPrimeiraCotacao = container.children.length === 0;
+        const btnRemoverCotacao = !isPrimeiraCotacao ? `<button type="button" class="btn-remover-cotacao" onclick="removerCotacao(this)" title="Remover">❌</button>` : '';
+
+        div.innerHTML = `
+            <div class="form-col" style="flex: 2;">
+                <input type="text" class="c-forn" placeholder="Nome da Empresa" required style="margin-bottom: 5px;">
+                <input type="text" class="c-cnpj" placeholder="CNPJ (00.000.000/0000-00)" oninput="mascaraCNPJ(event)" required>
+            </div>
+            <div class="form-col" style="flex: 1.5;"><input type="text" class="c-marca" placeholder="Marca Ofertada" required></div>
+            <div class="form-col" style="flex: 1.5; display: flex; align-items: center; gap: 8px;">
+                <input type="text" class="c-vlr" placeholder="R$ 0,00" oninput="mascaraMoeda(event)" required style="width: 100%;">
+                ${btnRemoverCotacao}
+            </div>
+        `;
+        container.appendChild(div);
+    }
+
+    function removerCotacao(btn) { btn.closest('.cotacao-box').remove(); }
+
+    adicionarItem();
+
+    async function verificarProcessos() {
+        const chave = document.getElementById('inputChave').value.trim();
+        if(!chave) { showCustomAlert("Alerta de Operação", "Digite uma chave na caixa primeiro!", true); return; }
+        try {
+            const res = await fetch(`/api/verificar?chave=${chave.toUpperCase()}`);
+            const msg = await res.text();
+            if(msg.includes("✅")) { showCustomAlert("Auditoria Confirmada", msg, false); }
+            else { showCustomAlert("Falha na Auditoria", msg, true); }
+        } catch(e) { showCustomAlert("Erro de Servidor", "Erro fatal de conexão.", true); }
+    }
+
+    document.getElementById('formSICPVA').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const amparoSelect = document.getElementById('amparo').value;
+        const itensReq = [];
+        document.querySelectorAll('.item-box').forEach(ib => {
+            const cotacoesReq = [];
+            ib.querySelectorAll('.cotacao-box').forEach(cb => {
+                let rawVlr = cb.querySelector('.c-vlr').value.replace('R$ ', '').replace(/\./g, '').replace(',', '.');
+                let parsedVlr = parseFloat(rawVlr); if(isNaN(parsedVlr)) parsedVlr = 0.0;
+                cotacoesReq.push({ 
+                    fornecedor: cb.querySelector('.c-forn').value, 
+                    cnpj: cb.querySelector('.c-cnpj').value, 
+                    marca: cb.querySelector('.c-marca').value, 
+                    valor: parsedVlr 
+                });
+            });
+            let qtdParsed = parseInt(ib.querySelector('.i-qtd').value); if(isNaN(qtdParsed)) qtdParsed = 1;
+            itensReq.push({ descricao: ib.querySelector('.i-desc').value, quantidade: qtdParsed, unidade: ib.querySelector('.i-un').value, criterioMenorPreco: ib.querySelector('.i-crit').value === 'true', cotacoes: cotacoesReq });
+        });
+
+        let prazoParsed = parseInt(document.getElementById('prazo').value); if(isNaN(prazoParsed)) prazoParsed = 0;
+        let garantiaParsed = parseInt(document.getElementById('reqGarantia').value); if(isNaN(garantiaParsed)) garantiaParsed = 0;
+        
+        const prefMeEpp = document.getElementById('preferenciaMeEpp').value;
+        const justMeEpp = prefMeEpp === 'NAO' ? document.getElementById('justificativaMeEpp').value : "";
+
+        const dados = {
+            natureza: document.getElementById('natureza').value, setor: document.getElementById('setor').value,
+            nomeResp: document.getElementById('nomeResp').value, matResp: document.getElementById('matResp').value, emailResp: document.getElementById('emailResp').value,
+            nomeSec: document.getElementById('nomeSec').value, cargoSec: document.getElementById('cargoSec').value,
+            objeto: document.getElementById('objeto').value, problema: document.getElementById('problema').value, beneficio: document.getElementById('beneficio').value,
+            prioridade: document.getElementById('prioridade').value, dataTermino: document.getElementById('termino').value, prazoEntregaDias: prazoParsed, 
+            localEntrega: document.getElementById('localEntrega').value,
+            consorcioCincatarina: document.getElementById('cincatarina').checked,
+            amparoLegalEtp: amparoSelect,
+            
+            categoriaItem: document.getElementById('categoriaItem').value,
+            preferenciaMeEpp: prefMeEpp,
+            justificativaMeEpp: justMeEpp,
+
+            reqPadrao: document.getElementById('reqPadrao').checked,
+            reqSustentabilidade: document.getElementById('reqSust').checked,
+            reqCertificacao: document.getElementById('reqCert').checked,
+            reqGarantiaMeses: garantiaParsed,
+
+            gerarCertidao: amparoSelect === 'B',
+            certidaoAssinatura: document.getElementById('certNome').value,
+            certidaoCargo: document.getElementById('certCargo').value,
+            certidaoData: document.getElementById('certData').value,
+
+            itens: itensReq
+        };
+
+        document.getElementById('loading').style.display = 'flex';
+
+        try {
+            const response = await fetch('/api/gerar', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados)
+            });
+            
+            if(response.ok) {
+                const blob = await response.blob();
+                let filename = "Documentos_SICPVA.zip";
+                const disposition = response.headers.get('Content-Disposition');
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    var matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) { filename = matches[1].replace(/['"]/g, ''); }
+                }
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = filename; 
+                document.body.appendChild(a); a.click(); a.remove();
+                document.getElementById('loading').style.display = 'none';
+            } else {
+                const erroMsg = await response.text();
+                document.getElementById('loading').style.display = 'none';
+                showCustomAlert("A IA bloqueou a Operação", erroMsg, true);
+            }
+        } catch(e) {
+            document.getElementById('loading').style.display = 'none';
+            showCustomAlert("Erro Crítico", "Falha de comunicação com o servidor de Processamento.", true);
+        }
+    });
+</script>
+
+    <footer class="rodape-criador">
+        <span>Conheça o criador</span>
+        <a href="https://www.linkedin.com/in/ethanfaccioli/" target="_blank" title="LinkedIn de Ethan Faccioli">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+            </svg>
+        </a>
+    </footer>
+
+</body>
+</html>
