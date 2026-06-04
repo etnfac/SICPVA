@@ -70,7 +70,8 @@ input:invalid, select:invalid, textarea:invalid { box-shadow: none; }
 .rodape-criador { margin-top: auto; padding-top: 30px; padding-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 12px; color: #71717a; font-size: 14px; font-weight: 500; width: 100%; }
 .rodape-criador span { letter-spacing: 0.5px; }
 .rodape-criador a { color: #a1a1aa; display: flex; align-items: center; transition: all 0.2s ease; }
-.rodape-criador a:hover { color: #0a66c2; transform: scale(1.15); }
+.link-linkedin:hover { color: #0a66c2; transform: scale(1.15); }
+.link-github:hover { color: #ffffff; transform: scale(1.15); }
 
 /* MOBILE */
 @media (max-width: 900px) {
