@@ -473,13 +473,16 @@ public class GeradorPdfService {
         doc.close();
     }
 
-    private String[] chamarIA(String setor, String objeto, String problema, String beneficio, boolean isReg, String rawItems, String amparoTexto) {
+private String[] chamarIA(String setor, String objeto, String problema, String beneficio, boolean isReg, String rawItems, String amparoTexto) {
         String baseJust = "A contratação justifica-se para sanar: " + problema + ". Benefício: " + beneficio;
         if(isReg) baseJust += ". A presente busca a regularização da despesa já executada.";
         String[] fallback = {setor, objeto, baseJust, "NAO", rawItems, "OK"};
         
         String apiKey = System.getenv("GEMINI_API_KEY");
-        if (apiKey == null || apiKey.trim().isEmpty()) return fallback;
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            System.out.println("SICPVA LOG: API Key ausente no Render.");
+            return fallback;
+        }
         
         try {
             String prompt = "Você é um auditor e revisor rigoroso de licitações. " +
@@ -491,7 +494,49 @@ public class GeradorPdfService {
             "6: Avalie se o amparo legal ('" + amparoTexto + "') faz sentido para o objeto ('" + objeto + "'). Inexigibilidade é só para exclusividade/notória especialização. Bens comuns não podem. Se for ilegal, retorne EXATAMENTE começando com 'ERRO: ' e o motivo. Se for coerente, retorne 'OK'. " +
             "REGRAS DE SAÍDA OBRIGATÓRIAS: RETORNE APENAS OS 6 TEXTOS SEPARADOS POR '###'. NÃO USE MARKDOWN (COMO ```). NÃO USE QUEBRAS DE LINHA DENTRO DOS TEXTOS. NÃO ADICIONE NÚMEROS NO INÍCIO.";
             
-            // Tratamento de limpeza profunda para que nenhum caractere digitado pelo utilizador quebre o JSON
+            String promptSeguro = prompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", "");
+            String json = "{\"contents\":[{\"parts\":[{\"text\":\"" + promptSeguro + "\"}]}]}";
+            
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=)" + apiKey))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
+                .build();
+                
+            HttpResponse<String> r = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (r.statusCode() != 200) {
+                System.out.println("SICPVA LOG ERRO API: Status " + r.statusCode() + " - " + r.body());
+                return fallback;
+            }
+
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(r.body());
+            
+            if (root.has("candidates")) {
+                String proc = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+                proc = proc.replace("```json", "").replace("```text", "").replace("```html", "").replace("```", "").trim();
+                
+                String[] pts = proc.split("###");
+                if (pts.length >= 6) { 
+                    for(int i=0; i<6; i++) {
+                        pts[i] = pts[i].trim().replaceFirst("^[1-6][\\.\\-\\\\) :]\\s*", "").replace("\n", " ").trim(); 
+                    }
+                    return pts; 
+                } else {
+                    System.out.println("SICPVA LOG: IA retornou formato quebrado: " + proc);
+                }
+            } else {
+                System.out.println("SICPVA LOG: Resposta da IA sem candidatos: " + r.body());
+            }
+            return fallback;
+        } catch (Exception e) { 
+            System.out.println("SICPVA LOG EXCEÇÃO: " + e.getMessage());
+            e.printStackTrace();
+            return fallback; 
+        }
+    }
+            
             String promptSeguro = prompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", "");
             String json = "{\"contents\":[{\"parts\":[{\"text\":\"" + promptSeguro + "\"}]}]}";
             
