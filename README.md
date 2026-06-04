@@ -43,7 +43,7 @@ O **SICPVA** é uma plataforma arquitetada para automatizar e gerenciar o fluxo 
 <div align="center">
   <img src="./src/main/resources/static/print-tela-2.png" alt="Exemplo do Mapa de Preços" width="800"/>
   <br>
-  <em>Exemplo de Mapa Comprobatório de Pesquisa de Preços gerado automaticamente pelo motor Java.</em>
+  <em>Exemplo de Mapa Comprobatório de Pesquisa de Preços gerado automaticamente pelo Java.</em>
 </div>
 
 <div align="center">
