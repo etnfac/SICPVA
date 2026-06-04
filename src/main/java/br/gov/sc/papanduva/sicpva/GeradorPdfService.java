@@ -475,40 +475,47 @@ public class GeradorPdfService {
         String baseJust = "A contratação justifica-se para sanar: " + problema + ". Benefício: " + beneficio;
         if(isReg) baseJust += ". A presente busca a regularização da despesa já executada.";
         String[] fallback = {setor, objeto, baseJust, "NAO", rawItems, "OK"};
-        if (GEMINI_API_KEY == null || GEMINI_API_KEY.isEmpty()) return fallback;
+        
+        String apiKey = System.getenv("GEMINI_API_KEY");
+        if (apiKey == null || apiKey.trim().isEmpty()) return fallback;
+        
         try {
             String prompt = "Você é um auditor rigoroso de licitações da Prefeitura de Papanduva, aplicando a Lei 14.133/21 e o Decreto Municipal 3.401/24. " +
             "1: Corrija ortografia de: '" + setor + "'. " +
             "2: Corrija ortografia de: '" + objeto + "'. " +
-            "3: Una este problema ('" + problema + "') e benefício ('" + beneficio + "') num parágrafo formal jurídico." + (isReg ? " Inclua que é regularização de despesa." : "") + " " +
+            "3: Una o problema ('" + problema + "') e o benefício ('" + beneficio + "') transformando-os em um único parágrafo formal, impessoal e com linguagem jurídica adequada para um Termo de Referência." + (isReg ? " Inclua que é regularização de despesa." : "") + " " +
             "4: Responda apenas SIM ou NAO: O objeto '" + objeto + "' envolve tecnologia/T.I.? " +
-            "5: Regra do Manual de Compras: 'NUNCA inclua quantidades, prazos ou nomes de secretarias na descrição do produto'. Abaixo há uma lista delimitada por '|@|'. Corrija a ortografia, aplique Title Case e APAGUE qualquer menção a quantidades (ex: '500 unidades'), prazos ou secretarias de dentro dos nomes dos produtos. MANTENHA o delimitador exato: [" + rawItems + "]. " +
+            "5: Regra do Manual: 'NUNCA inclua quantidades, prazos ou nomes de secretarias na descrição do produto'. Abaixo há uma lista delimitada por '|@|'. Corrija a ortografia, aplique Title Case e APAGUE quantidades/prazos/secretarias de dentro dos nomes. MANTENHA o delimitador exato: [" + rawItems + "]. " +
             "6: Avalie se o amparo legal ('" + amparoTexto + "') faz sentido para o objeto ('" + objeto + "'). " +
-            "Regra: Inexigibilidade (Art. 74) é SÓ para fornecedor exclusivo, artista consagrado ou notória especialização. Celulares, veículos, material de expediente, etc., SÃO BENS COMUNS (nunca inexigíveis). " +
-            "Se o amparo for ilegal, retorne EXATAMENTE começando com a palavra 'ERRO: ' seguido do motivo e sugerindo a Dispensa de Licitação. Se for coerente, retorne APENAS 'OK'. " +
+            "Se for ilegal, retorne EXATAMENTE começando com 'ERRO: ' seguido do motivo. Se for coerente, retorne APENAS 'OK'. " +
             "RETORNE EXATAMENTE 6 TEXTOS SEPARADOS POR '###'.";
             
-            String promptSeguro = prompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
-            String json = "{\"contents\":[{\"parts\":[{\"text\":\"" + promptSeguro + "\"}]}]}";
-            HttpResponse<String> r = HttpClient.newHttpClient().send(HttpRequest.newBuilder().uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_API_KEY)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8)).build(), HttpResponse.BodyHandlers.ofString());
-            int idx = r.body().indexOf("\"text\": \"");
-            if (idx != -1) {
-                String proc = r.body().substring(idx + 9, r.body().indexOf("\"", idx + 9)).replace("\\n", "").replace("\\\"", "\"");
+            String json = "{\"contents\":[{\"parts\":[{\"text\":\"" + prompt.replace("\"", "\\\"").replace("\n", " ") + "\"}]}]}";
+            
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
+                .build();
+                
+            HttpResponse<String> r = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(r.body());
+            
+            if (root.has("candidates")) {
+                String proc = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
                 String[] pts = proc.split("###");
                 if (pts.length >= 6) { 
-                    for(int i=0;i<6;i++) pts[i] = pts[i].trim().replaceFirst("^[1-6][\\.\\-\\\\) :]\\s*", ""); 
+                    for(int i=0; i<6; i++) {
+                        pts[i] = pts[i].trim().replaceFirst("^[1-6][\\.\\-\\\\) :]\\s*", ""); 
+                    }
                     return pts; 
                 }
             }
             return fallback;
-        } catch (Exception e) { return fallback; }
+        } catch (Exception e) { 
+            e.printStackTrace();
+            return fallback; 
+        }
     }
-
-    private void registarLogNaCloud(String data, String setor, String objeto, double valor, String amparo, String chave, String docs) {
-        if (GOOGLE_SHEETS_URL == null || GOOGLE_SHEETS_URL.isEmpty()) return;
-        try {
-            String jsonPayload = String.format(new Locale("pt", "BR"), "{\"dataEmissao\": \"%s\", \"setor\": \"%s\", \"objeto\": \"%s\", \"valor\": \"R$ %,.2f\", \"amparo\": \"%s\", \"chave\": \"%s\", \"documentos\": \"%s\"}", data, setor.replace("\"", "\\\""), objeto.replace("\"", "\\\""), valor, amparo.replace("\"", "\\\""), chave, docs);
-            HttpClient.newHttpClient().send(HttpRequest.newBuilder().uri(URI.create(GOOGLE_SHEETS_URL)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8)).build(), HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) {}
-    }
-}

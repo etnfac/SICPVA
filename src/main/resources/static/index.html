@@ -218,11 +218,11 @@
 
                 <div id="bloco-certidao" style="display: none; padding: 25px; background: #1e1e24; border-radius: 8px; border-left: 4px solid #22c55e; margin-top: 40px; margin-bottom: 20px;">
                     <h4 style="color: #fafafa; margin-bottom: 5px; font-size: 18px;">📄 Emitir Certidão de Dispensa (Exclusivo Art. 187)</h4>
-                    <p style="font-size: 13px; color: #a1a1aa; margin-bottom: 20px;">O sistema detectou o Amparo 'B'. Preencha os dados abaixo para o 4º Documento.</p>
+                    <p style="font-size: 13px; color: #a1a1aa; margin-bottom: 20px;">O sistema detetou o Amparo 'B'. Preencha os dados abaixo para o 4º Documento.</p>
                     <div class="form-row" style="margin-bottom:0;">
-                        <div class="form-col"><label>Nome na Assinatura</label><input type="text" id="certNome" placeholder="Nome e Sobrenome"></div>
+                        <div class="form-col"><label>Nome na Assinatura</label><input type="text" id="certNome" placeholder="Nome completo"></div>
                         <div class="form-col"><label>Cargo</label><input type="text" id="certCargo" placeholder="Ex: Auxiliar Administrativo"></div>
-                        <div class="form-col"><label>Data da Assinatura</label><input type="text" id="certData" placeholder="Ex: 04 de Junho de 2026"></div>
+                        <div class="form-col"><label>Data da Assinatura</label><input type="date" id="certData"></div>
                     </div>
                 </div>
 
@@ -409,7 +409,7 @@ function atualizarTutorialAmparo() {
         } catch(e) { showCustomAlert("Erro de Servidor", "Erro fatal de conexão.", true); }
     }
 
-    document.getElementById('formSICPVA').addEventListener('submit', async function(e) {
+document.getElementById('formSICPVA').addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const amparoSelect = document.getElementById('amparo').value;
@@ -436,6 +436,15 @@ function atualizarTutorialAmparo() {
         const prefMeEpp = document.getElementById('preferenciaMeEpp').value;
         const justMeEpp = prefMeEpp === 'NAO' ? document.getElementById('justificativaMeEpp').value : "";
 
+        // NOVA MÁGICA: Traduzindo a data do calendário para texto jurídico
+        let rawDate = document.getElementById('certData').value;
+        let dataFormatadaExata = "";
+        if (rawDate) {
+            const partes = rawDate.split('-'); // Divide "2026-06-04"
+            const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            dataFormatadaExata = `${partes[2]} de ${meses[parseInt(partes[1]) - 1]} de ${partes[0]}`;
+        }
+
         const dados = {
             natureza: document.getElementById('natureza').value, setor: document.getElementById('setor').value,
             nomeResp: document.getElementById('nomeResp').value, matResp: document.getElementById('matResp').value, emailResp: document.getElementById('emailResp').value,
@@ -458,7 +467,7 @@ function atualizarTutorialAmparo() {
             gerarCertidao: amparoSelect === 'B',
             certidaoAssinatura: document.getElementById('certNome').value,
             certidaoCargo: document.getElementById('certCargo').value,
-            certidaoData: document.getElementById('certData').value,
+            certidaoData: dataFormatadaExata, // Usando a data formatada aqui!
 
             itens: itensReq
         };
