@@ -362,8 +362,8 @@ function atualizarTutorialAmparo() {
                 <div class="form-col" style="flex: 2;"><input type="text" class="i-desc" placeholder="Descrição (Ex: Papel A4)" required></div>
                 <div class="form-col" style="flex: 0.5;"><input type="number" class="i-qtd" placeholder="Qtd" min="1" required></div>
                 <div class="form-col" style="flex: 1;"><select class="i-un" required>${opcoesUnidade}</select></div>
-                <div class="form-col" style="flex: 1;"><select class="i-crit" required><option value="false" selected>Média Saneada</option><option value="true">Menor Preço</option></select></div>
-            </div>
+                <div class="form-col" style="flex: 1;"><select class="i-crit" required><option value="" disabled selected>Selecione o critério...</option><option value="false" selected>Média Saneada</option><option value="true">Menor Preço</option></select></div>
+                </div>
             <div class="cotacoes-container"></div>
             <button type="button" class="btn-add" onclick="addCotacao(this)">+ Inserir Cotação</button>
         `;
