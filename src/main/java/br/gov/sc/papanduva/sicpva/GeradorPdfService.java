@@ -34,23 +34,17 @@ public class GeradorPdfService {
     private static final String GEMINI_API_KEY = System.getenv("GEMINI_API_KEY");
     private static final String GOOGLE_SHEETS_URL = System.getenv("PLANILHA_URL");
 
-private String formatarTextoInteligente(String texto) {
+    private String formatarTextoInteligente(String texto) {
         if (texto == null || texto.trim().isEmpty()) return "";
-        
-        // Converte tudo para minúsculas primeiro
         texto = texto.toLowerCase();
                      
         String[] palavras = texto.split("\\s+");
         StringBuilder sb = new StringBuilder();
-        
-        // Aplica o Title Case universal (Maiúscula na primeira letra de cada palavra)
         for (String p : palavras) {
             if (p.length() > 0) {
-                // Ignora preposições para não ficarem maiúsculas
                 if (p.matches("de|da|do|das|dos|e|em|com|para|por|sem|sob") && sb.length() > 0) { 
                     sb.append(p).append(" "); 
                 } else { 
-                    // Capitaliza a primeira letra universalmente
                     sb.append(Character.toUpperCase(p.charAt(0))).append(p.substring(1)).append(" "); 
                 }
             }
@@ -479,26 +473,38 @@ private String formatarTextoInteligente(String texto) {
         
         try {
             String prompt = "Assuma o papel de um Procurador Jurídico e Auditor de Licitações. " +
-            "Retorne EXATAMENTE um objeto JSON válido, sem formatações adicionais ou marcações de texto, com as seguintes chaves e regras rigorosas: " +
-            "\"setor\": corrija a ortografia de '" + setor + "'; " +
-            "\"objeto\": corrija a ortografia de '" + objeto + "'; " +
-            "\"justificativa\": escreva um texto contínuo, extremamente formal, na 3a pessoa, com vocabulário jurídico de licitação pública, justificando a contratação baseada no problema ('" + problema + "') e no benefício ('" + beneficio + "')." + (isReg ? " Mencione a necessidade de regularização da despesa." : "") + " " +
-            "\"tecnologia\": responda estritamente 'SIM' ou 'NAO' avaliando se o objeto '" + objeto + "' envolve T.I. ou tecnologia; " +
-            "\"itens\": corrija ortografia, aplique Title Case e APAGUE quantidades/prazos/nomes de secretarias de dentro dos itens. MANTENHA o delimitador '|@|' exato separando os produtos: [" + rawItems + "]; " +
-            "\"amparo\": avalie se o amparo ('" + amparoTexto + "') é legal para o objeto ('" + objeto + "'). Bens comuns não podem usar Inexigibilidade. Se for ilegal, retorne 'ERRO: motivo'. Se for coerente, retorne 'OK'.";
+            "Retorne APENAS um JSON válido e estruturado. NENHUM texto fora do JSON. " +
+            "Use as chaves exatas: \"setor\", \"objeto\", \"justificativa\", \"tecnologia\", \"itens\", \"amparo\". " +
+            "Regras: " +
+            "1. \"setor\": corrija a ortografia de '" + setor + "'. " +
+            "2. \"objeto\": corrija a ortografia de '" + objeto + "'. " +
+            "3. \"justificativa\": escreva um parágrafo contínuo, formal, na 3a pessoa, com vocabulário jurídico de licitação pública, justificando a contratação baseada no problema ('" + problema + "') e no benefício ('" + beneficio + "'). " + (isReg ? "Mencione a regularização da despesa. " : "") +
+            "4. \"tecnologia\": responda 'SIM' ou 'NAO' se o objeto '" + objeto + "' envolve T.I. " +
+            "5. \"itens\": corrija ortografia, aplique Title Case e APAGUE quantidades/prazos/nomes de secretarias dos produtos. MANTENHA o delimitador '|@|' entre eles: [" + rawItems + "]. " +
+            "6. \"amparo\": avalie se o amparo ('" + amparoTexto + "') é legal para o objeto ('" + objeto + "'). Se ilegal (ex: inexigibilidade para bem comum), retorne 'ERRO: motivo'. Se legal, retorne 'OK'.";
             
-            String promptSeguro = prompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", "");
+            // A Mágica de Arquitetura Segura: Usando o Jackson para construir o JSON nativamente.
+            // Acaba com problemas de aspas e quebras de texto quebrando o envio.
+            java.util.Map<String, Object> part = new java.util.HashMap<>();
+            part.put("text", prompt);
             
-            // responseMimeType nativo do Google
-            String json = "{" +
-                "\"contents\":[{\"parts\":[{\"text\":\"" + promptSeguro + "\"}]}]," +
-                "\"generationConfig\": {\"responseMimeType\": \"application/json\"}" +
-            "}";
+            java.util.Map<String, Object> parts = new java.util.HashMap<>();
+            parts.put("parts", java.util.Collections.singletonList(part));
+            
+            java.util.Map<String, Object> contents = new java.util.HashMap<>();
+            contents.put("contents", java.util.Collections.singletonList(parts));
+            
+            java.util.Map<String, Object> generationConfig = new java.util.HashMap<>();
+            generationConfig.put("responseMimeType", "application/json");
+            contents.put("generationConfig", generationConfig);
+
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            String jsonPayload = mapper.writeValueAsString(contents);
             
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8))
                 .build();
                 
             HttpResponse<String> r = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
@@ -508,11 +514,13 @@ private String formatarTextoInteligente(String texto) {
                 return fallback;
             }
 
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(r.body());
             
             if (root.has("candidates")) {
                 String proc = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+                
+                // Extrator de Markdown
+                proc = proc.replace("```json", "").replace("```", "").trim();
                 
                 com.fasterxml.jackson.databind.JsonNode aiData = mapper.readTree(proc);
                 
