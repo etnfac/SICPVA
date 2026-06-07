@@ -34,29 +34,23 @@ public class GeradorPdfService {
     private static final String GEMINI_API_KEY = System.getenv("GEMINI_API_KEY");
     private static final String GOOGLE_SHEETS_URL = System.getenv("PLANILHA_URL");
 
-    private String formatarTextoInteligente(String texto) {
+private String formatarTextoInteligente(String texto) {
         if (texto == null || texto.trim().isEmpty()) return "";
+        
+        // Converte tudo para minúsculas primeiro
         texto = texto.toLowerCase();
-        texto = texto.replaceAll("ihpone|iphone|iphnoe|ipohne|aifone|iphond|igphone|ifone", "iPhone");
-        texto = texto.replaceAll("samsumg|sansung|samsung", "Samsung");
-        texto = texto.replaceAll("motorola", "Motorola");
-        texto = texto.replaceAll("hp\\b", "HP");
-        texto = texto.replaceAll("dell", "Dell");
-        texto = texto.replaceAll("lg\\b", "LG");
-        texto = texto.replaceAll("gb\\b", "GB");
-        texto = texto.replaceAll("tb\\b", "TB");
                      
         String[] palavras = texto.split("\\s+");
         StringBuilder sb = new StringBuilder();
+        
+        // Aplica o Title Case universal (Maiúscula na primeira letra de cada palavra)
         for (String p : palavras) {
             if (p.length() > 0) {
+                // Ignora preposições para não ficarem maiúsculas
                 if (p.matches("de|da|do|das|dos|e|em|com|para|por|sem|sob") && sb.length() > 0) { 
                     sb.append(p).append(" "); 
-                } 
-                else if (p.equals("iPhone") || p.equals("HP") || p.equals("LG") || p.equals("GB") || p.equals("TB")) { 
-                    sb.append(p).append(" "); 
-                }
-                else { 
+                } else { 
+                    // Capitaliza a primeira letra universalmente
                     sb.append(Character.toUpperCase(p.charAt(0))).append(p.substring(1)).append(" "); 
                 }
             }
