@@ -34,29 +34,23 @@ public class GeradorPdfService {
     private static final String GEMINI_API_KEY = System.getenv("GEMINI_API_KEY");
     private static final String GOOGLE_SHEETS_URL = System.getenv("PLANILHA_URL");
 
-    private String formatarTextoInteligente(String texto) {
+private String formatarTextoInteligente(String texto) {
         if (texto == null || texto.trim().isEmpty()) return "";
+        
+        // Converte tudo para minúsculas primeiro
         texto = texto.toLowerCase();
-        texto = texto.replaceAll("ihpone|iphone|iphnoe|ipohne|aifone|iphond|igphone|ifone", "iPhone");
-        texto = texto.replaceAll("samsumg|sansung|samsung", "Samsung");
-        texto = texto.replaceAll("motorola", "Motorola");
-        texto = texto.replaceAll("hp\\b", "HP");
-        texto = texto.replaceAll("dell", "Dell");
-        texto = texto.replaceAll("lg\\b", "LG");
-        texto = texto.replaceAll("gb\\b", "GB");
-        texto = texto.replaceAll("tb\\b", "TB");
                      
         String[] palavras = texto.split("\\s+");
         StringBuilder sb = new StringBuilder();
+        
+        // Aplica o Title Case universal (Maiúscula na primeira letra de cada palavra)
         for (String p : palavras) {
             if (p.length() > 0) {
+                // Ignora preposições para não ficarem maiúsculas
                 if (p.matches("de|da|do|das|dos|e|em|com|para|por|sem|sob") && sb.length() > 0) { 
                     sb.append(p).append(" "); 
-                } 
-                else if (p.equals("iPhone") || p.equals("HP") || p.equals("LG") || p.equals("GB") || p.equals("TB")) { 
-                    sb.append(p).append(" "); 
-                }
-                else { 
+                } else { 
+                    // Capitaliza a primeira letra universalmente
                     sb.append(Character.toUpperCase(p.charAt(0))).append(p.substring(1)).append(" "); 
                 }
             }
@@ -484,20 +478,25 @@ public class GeradorPdfService {
         }
         
         try {
-            String prompt = "Você é um auditor e revisor rigoroso de licitações. " +
-            "1: Corrija ortografia de: '" + setor + "'. " +
-            "2: Corrija ortografia de: '" + objeto + "'. " +
-            "3: Transforme o seguinte problema e benefício num único parágrafo muito formal, impessoal e com linguagem jurídica de administração pública para um Termo de Referência: Problema: '" + problema + "' / Benefício: '" + beneficio + "'." + (isReg ? " Inclua que é regularização de despesa." : "") + " " +
-            "4: Responda apenas SIM ou NAO: O objeto '" + objeto + "' envolve tecnologia/T.I.? " +
-            "5: Corrija ortografia, aplique Title Case e APAGUE quantidades/prazos/secretarias de dentro dos nomes dos produtos. MANTENHA o delimitador '|@|' exato entre eles: [" + rawItems + "]. " +
-            "6: Avalie se o amparo legal ('" + amparoTexto + "') faz sentido para o objeto ('" + objeto + "'). Inexigibilidade é só para exclusividade/notória especialização. Bens comuns não podem. Se for ilegal, retorne EXATAMENTE começando com 'ERRO: ' e o motivo. Se for coerente, retorne 'OK'. " +
-            "REGRAS DE SAÍDA OBRIGATÓRIAS: RETORNE APENAS OS 6 TEXTOS SEPARADOS POR '###'. NÃO USE MARKDOWN (COMO ```). NÃO USE QUEBRAS DE LINHA DENTRO DOS TEXTOS. NÃO ADICIONE NÚMEROS NO INÍCIO.";
+            String prompt = "Assuma o papel de um Procurador Jurídico e Auditor de Licitações. " +
+            "Retorne EXATAMENTE um objeto JSON válido, sem formatações adicionais ou marcações de texto, com as seguintes chaves e regras rigorosas: " +
+            "\"setor\": corrija a ortografia de '" + setor + "'; " +
+            "\"objeto\": corrija a ortografia de '" + objeto + "'; " +
+            "\"justificativa\": escreva um texto contínuo, extremamente formal, na 3a pessoa, com vocabulário jurídico de licitação pública, justificando a contratação baseada no problema ('" + problema + "') e no benefício ('" + beneficio + "')." + (isReg ? " Mencione a necessidade de regularização da despesa." : "") + " " +
+            "\"tecnologia\": responda estritamente 'SIM' ou 'NAO' avaliando se o objeto '" + objeto + "' envolve T.I. ou tecnologia; " +
+            "\"itens\": corrija ortografia, aplique Title Case e APAGUE quantidades/prazos/nomes de secretarias de dentro dos itens. MANTENHA o delimitador '|@|' exato separando os produtos: [" + rawItems + "]; " +
+            "\"amparo\": avalie se o amparo ('" + amparoTexto + "') é legal para o objeto ('" + objeto + "'). Bens comuns não podem usar Inexigibilidade. Se for ilegal, retorne 'ERRO: motivo'. Se for coerente, retorne 'OK'.";
             
             String promptSeguro = prompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", "");
-            String json = "{\"contents\":[{\"parts\":[{\"text\":\"" + promptSeguro + "\"}]}]}";
+            
+            // responseMimeType nativo do Google
+            String json = "{" +
+                "\"contents\":[{\"parts\":[{\"text\":\"" + promptSeguro + "\"}]}]," +
+                "\"generationConfig\": {\"responseMimeType\": \"application/json\"}" +
+            "}";
             
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=)" + apiKey))
+                .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
                 .build();
@@ -505,7 +504,7 @@ public class GeradorPdfService {
             HttpResponse<String> r = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
             
             if (r.statusCode() != 200) {
-                System.out.println("SICPVA LOG ERRO API: Status " + r.statusCode() + " - " + r.body());
+                System.out.println("SICPVA LOG ERRO API: " + r.statusCode() + " - " + r.body());
                 return fallback;
             }
 
@@ -514,20 +513,20 @@ public class GeradorPdfService {
             
             if (root.has("candidates")) {
                 String proc = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
-                proc = proc.replace("```json", "").replace("```text", "").replace("```html", "").replace("```", "").trim();
                 
-                String[] pts = proc.split("###");
-                if (pts.length >= 6) { 
-                    for(int i=0; i<6; i++) {
-                        pts[i] = pts[i].trim().replaceFirst("^[1-6][\\.\\-\\\\) :]\\s*", "").replace("\n", " ").trim(); 
-                    }
-                    return pts; 
-                } else {
-                    System.out.println("SICPVA LOG: IA retornou formato quebrado: " + proc);
-                }
-            } else {
-                System.out.println("SICPVA LOG: Resposta da IA sem candidatos: " + r.body());
+                com.fasterxml.jackson.databind.JsonNode aiData = mapper.readTree(proc);
+                
+                String[] pts = new String[6];
+                pts[0] = aiData.has("setor") ? aiData.path("setor").asText() : setor;
+                pts[1] = aiData.has("objeto") ? aiData.path("objeto").asText() : objeto;
+                pts[2] = aiData.has("justificativa") ? aiData.path("justificativa").asText() : baseJust;
+                pts[3] = aiData.has("tecnologia") ? aiData.path("tecnologia").asText() : "NAO";
+                pts[4] = aiData.has("itens") ? aiData.path("itens").asText() : rawItems;
+                pts[5] = aiData.has("amparo") ? aiData.path("amparo").asText() : "OK";
+                
+                return pts;
             }
+            
             return fallback;
         } catch (Exception e) { 
             System.out.println("SICPVA LOG EXCEÇÃO: " + e.getMessage());
